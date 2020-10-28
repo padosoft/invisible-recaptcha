@@ -2,6 +2,7 @@ Invisible reCAPTCHA
 ==========
 ![php-badge](https://img.shields.io/badge/php-%3E%3D%205.6-8892BF.svg)
 [![packagist-badge](https://img.shields.io/packagist/v/albertcht/invisible-recaptcha.svg)](https://packagist.org/packages/albertcht/invisible-recaptcha)
+[![Total Downloads](https://poser.pugx.org/albertcht/invisible-recaptcha/downloads)](https://packagist.org/packages/albertcht/invisible-recaptcha)
 [![travis-badge](https://api.travis-ci.org/albertcht/invisible-recaptcha.svg?branch=master)](https://travis-ci.org/albertcht/invisible-recaptcha)
 
 ![invisible_recaptcha_demo](http://i.imgur.com/1dZ9XKn.png)
@@ -14,7 +15,6 @@ In reCAPTCHA v2, users need to click the button: "I'm not a robot" to prove they
 ## Notice
 
 * The master branch doesn't support multi captchas feature, please use `multi-forms` branch if you need it. (**Most of the time you are misusing recaptcha when you try to put multiple captchas in one page.**)
-* Please modify your configs parameter if you are not using this package with Laravel after you upgrade to `version 1.8`.
 
 ## Installation
 
@@ -62,26 +62,59 @@ INVISIBLE_RECAPTCHA_DEBUG=false
 
 Before you render the captcha, please keep those notices in mind:
 
-* `render()` function needs to be called within a form element.
+* `render()` or `renderHTML()` function needs to be called within a form element.
 * You have to ensure the `type` attribute of your submit button has to be `submit`.
 * There can only be one submit button in your form.
 
 ##### Display reCAPTCHA in Your View
 
 ```php
-{!! app('captcha')->render(); !!}
+{!! app('captcha')->render() !!}
 
 // or you can use this in blade
-@captcha()
+@captcha
 ```
 
 With custom language support:
 
 ```php
-{!! app('captcha')->render($lang = null); !!}
+{!! app('captcha')->render('en') !!}
 
 // or you can use this in blade
-@captcha($lang = null)
+@captcha('en')
+```
+
+##### Usage with Javascript frameworks like VueJS:
+
+The `render()` process includes three distinct sections that can be rendered separately incase you're using the package with a framework like VueJS which throws console errors when `<script>` tags are included in templates.
+
+You can render the polyfill (do this somewhere like the head of your HTML:)
+
+```php
+{!! app('captcha')->renderPolyfill() !!}
+// Or with blade directive:
+@captchaPolyfill
+```
+
+You can render the HTML using this following, this needs to be INSIDE your `<form>` tag:
+
+```php
+{!! app('captcha')->renderCaptchaHTML() !!}
+// Or with blade directive:
+@captchaHTML
+```
+
+And you can render the neccessary `<script>` tags including the optional language support by using:
+
+```php
+// The argument is optional.
+{!! app('captcha')->renderFooterJS('en') !!}
+
+// Or with blade directive:
+@captchaScripts
+// blade directive, with language support:
+@captchaScripts('en')
+
 ```
 
 ##### Validation
@@ -89,7 +122,6 @@ With custom language support:
 Add `'g-recaptcha-response' => 'required|captcha'` to rules array.
 
 ```php
-
 $validate = Validator::make(Input::all(), [
     'g-recaptcha-response' => 'required|captcha'
 ]);
@@ -108,7 +140,7 @@ add lines in application/config/config.php :
 $config['recaptcha.sitekey'] = 'sitekey'; 
 $config['recaptcha.secret'] = 'secretkey';
 // optional
-$config['recaptcha.options'] [
+$config['recaptcha.options'] = [
     'hideBadge' => false,
     'dataBadge' => 'bottomright',
     'timeout' => 5,
@@ -132,7 +164,7 @@ In view, in your form:
 
 Then back in your controller you can verify it:
 ```php
-$captcha->verifyResponse($_POST['g-recaptcha-response']);
+$captcha->verifyResponse($_POST['g-recaptcha-response'], $_SERVER['REMOTE_ADDR']);
 ```
 
 ## Without Laravel or CodeIgniter
@@ -147,7 +179,7 @@ require_once "vendor/autoload.php";
 $siteKey = 'sitekey';
 $secretKey = 'secretkey';
 // optional
-$options [
+$options = [
     'hideBadge' => false,
     'dataBadge' => 'bottomright',
     'timeout' => 5,
@@ -159,7 +191,7 @@ $captcha = new \AlbertCht\InvisibleReCaptcha\InvisibleReCaptcha($siteKey, $secre
 $captcha->setOption('debug', true);
 
 if (!empty($_POST)) {
-    var_dump($captcha->verifyResponse($_POST['g-recaptcha-response']));
+    var_dump($captcha->verifyResponse($_POST['g-recaptcha-response'], $_SERVER['REMOTE_ADDR']));
     exit();
 }
 
@@ -175,9 +207,10 @@ if (!empty($_POST)) {
 Use this function only when you need to take all control after clicking submit button. Recaptcha validation will not be triggered if you return false in this function.
 
 ```javascript
-_beforeSubmit = function() {
+_beforeSubmit = function(e) {
     console.log('submit button clicked.');
     // do other things before captcha validation
+    // e represents reference to original form submit event
     // return true if you want to continue triggering captcha validation, otherwise return false
     return false;
 }
@@ -195,7 +228,7 @@ _submitEvent = function() {
     _submitForm();
 }
 ```
-Here's am example to use an ajax submit (using jquery selector)
+Here's an example to use an ajax submit (using jquery selector)
 ```javascript
 _submitEvent = function() {
     $.ajax({
@@ -218,6 +251,10 @@ _submitEvent = function() {
     });
 };
 ```
+## Example Repository
+Repo: https://github.com/albertcht/invisible-recaptcha-example
+
+This repo demonstrates how to use this package with ajax way.
 
 ## Showcases
 
@@ -227,3 +264,8 @@ _submitEvent = function() {
 
 * anhskohbo (the author of no-captcha package)
 * [Contributors](https://github.com/albertcht/invisible-recaptcha/graphs/contributors)
+
+## Support on Beerpay
+Hey dude! Help me out for a couple of :beers:!
+
+[![Beerpay](https://beerpay.io/albertcht/invisible-recaptcha/badge.svg?style=beer-square)](https://beerpay.io/albertcht/invisible-recaptcha)  [![Beerpay](https://beerpay.io/albertcht/invisible-recaptcha/make-wish.svg?style=flat-square)](https://beerpay.io/albertcht/invisible-recaptcha?focus=wish)
