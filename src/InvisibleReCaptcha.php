@@ -1,15 +1,14 @@
 <?php
 
-namespace AlbertCht\InvisibleReCaptcha;
+namespace Padosoft\InvisibleReCaptcha;
 
-use Symfony\Component\HttpFoundation\Request;
-use GuzzleHttp\Client;
+use Illuminate\Http\Request;
 
 class InvisibleReCaptcha
 {
-    const API_URI = 'https://www.google.com/recaptcha/api.js';
-    const VERIFY_URI = 'https://www.google.com/recaptcha/api/siteverify';
-    const POLYFILL_URI = 'https://cdn.polyfill.io/v2/polyfill.min.js';
+    const API_URI        = 'https://www.google.com/recaptcha/api.js';
+    const VERIFY_URI     = 'https://www.google.com/recaptcha/api/siteverify';
+    const POLYFILL_URI   = 'https://cdn.polyfill.io/v2/polyfill.min.js';
     const DEBUG_ELEMENTS = [
         '_submitForm',
         '_captchaForm',
@@ -37,10 +36,6 @@ class InvisibleReCaptcha
      */
     protected $options;
 
-    /**
-     * @var \GuzzleHttp\Client
-     */
-    protected $client;
 
     /**
      * InvisibleReCaptcha.
@@ -54,11 +49,6 @@ class InvisibleReCaptcha
         $this->siteKey = $siteKey;
         $this->secretKey = $secretKey;
         $this->setOptions($options);
-        $this->setClient(
-            new Client([
-                'timeout' => $this->getOption('timeout', 5)
-            ])
-        );
     }
 
     /**
@@ -93,6 +83,7 @@ class InvisibleReCaptcha
         $html = $this->renderPolyfill();
         $html .= $this->renderCaptchaHTML();
         $html .= $this->renderFooterJS($lang);
+
         return $html;
     }
 
@@ -118,8 +109,10 @@ class InvisibleReCaptcha
             $html .= '<style>.grecaptcha-badge{display:none;!important}</style>' . PHP_EOL;
         }
 
-        $html .= '<div class="g-recaptcha" data-sitekey="' . $this->siteKey .'" ';
-        $html .= 'data-size="invisible" data-callback="_submitForm" data-badge="' . $this->getOption('dataBadge', 'bottomright') . '"></div>';
+        $html .= '<div class="g-recaptcha" data-sitekey="' . $this->siteKey . '" ';
+        $html .= 'data-size="invisible" data-callback="_submitForm" data-badge="' . $this->getOption('dataBadge',
+                'bottomright') . '"></div>';
+
         return $html;
     }
 
@@ -148,6 +141,7 @@ class InvisibleReCaptcha
             $html .= $this->renderDebug();
         }
         $html .= "}</script>" . PHP_EOL;
+
         return $html;
     }
 
@@ -201,7 +195,7 @@ class InvisibleReCaptcha
     }
 
     /**
-     * Verify invisible reCaptcha response by Symfony Request.
+     * Verify invisible reCaptcha response by Illuminate Request.
      *
      * @param Request $request
      *
@@ -224,11 +218,19 @@ class InvisibleReCaptcha
      */
     protected function sendVerifyRequest(array $query = [])
     {
-        $response = $this->client->post(static::VERIFY_URI, [
-            'form_params' => $query,
-        ]);
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, static::VERIFY_URI);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        if (defined('CURLOPT_TIMEOUT')) {
+            curl_setopt($ch, CURLOPT_TIMEOUT, $this->getOption('timeout', 5));
+        }
 
-        return json_decode($response->getBody(), true);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $query);
+        $xml = curl_exec($ch);
+        curl_close($ch);
+
+        return json_decode($xml, true);
     }
 
     /**
@@ -275,7 +277,7 @@ class InvisibleReCaptcha
     /**
      * Getter function of options
      *
-     * @return string
+     * @return array
      */
     public function getOptions()
     {
@@ -295,23 +297,4 @@ class InvisibleReCaptcha
         return array_key_exists($key, $this->options) ? $this->options[$key] : $value;
     }
 
-    /**
-     * Set guzzle client
-     *
-     * @param \GuzzleHttp\Client $client
-     */
-    public function setClient(Client $client)
-    {
-        $this->client = $client;
-    }
-
-    /**
-     * Getter function of guzzle client
-     *
-     * @return string
-     */
-    public function getClient()
-    {
-        return $this->client;
-    }
 }

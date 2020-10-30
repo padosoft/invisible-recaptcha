@@ -1,13 +1,11 @@
 Invisible reCAPTCHA
 ==========
 ![php-badge](https://img.shields.io/badge/php-%3E%3D%205.6-8892BF.svg)
-[![packagist-badge](https://img.shields.io/packagist/v/albertcht/invisible-recaptcha.svg)](https://packagist.org/packages/albertcht/invisible-recaptcha)
-[![Total Downloads](https://poser.pugx.org/albertcht/invisible-recaptcha/downloads)](https://packagist.org/packages/albertcht/invisible-recaptcha)
-[![travis-badge](https://api.travis-ci.org/albertcht/invisible-recaptcha.svg?branch=master)](https://travis-ci.org/albertcht/invisible-recaptcha)
 
 ![invisible_recaptcha_demo](http://i.imgur.com/1dZ9XKn.png)
 
 ## Why Invisible reCAPTCHA?
+Forked from [albertcht/invisible-recaptcha](https://github.com/albertcht/invisible-recaptcha)
 
 Invisible reCAPTCHA is an improved version of reCAPTCHA v2(no captcha).
 In reCAPTCHA v2, users need to click the button: "I'm not a robot" to prove they are human. In invisible reCAPTCHA, there will be not embed a captcha box for users to click. It's totally invisible! Only the badge will show on the buttom of the page to hint users that your website is using this technology. (The badge could be hidden, but not suggested.)
@@ -19,7 +17,7 @@ In reCAPTCHA v2, users need to click the button: "I'm not a robot" to prove they
 ## Installation
 
 ```
-composer require albertcht/invisible-recaptcha
+composer require padosoft/invisible-recaptcha
 ```
 
 ## Laravel 5
@@ -29,7 +27,7 @@ composer require albertcht/invisible-recaptcha
 Add ServiceProvider to the providers array in `app/config/app.php`.
 
 ```
-AlbertCht\InvisibleReCaptcha\InvisibleReCaptchaServiceProvider::class,
+Padosoft\InvisibleReCaptcha\InvisibleReCaptchaServiceProvider::class,
 ```
 
 > It also supports package discovery for Laravel 5.5.
@@ -150,7 +148,7 @@ $config['recaptcha.options'] = [
 
 In controller, use:
 ```php
-$data['captcha'] = new \AlbertCht\InvisibleReCaptcha\InvisibleReCaptcha(
+$data['captcha'] = new \Padosoft\InvisibleReCaptcha\InvisibleReCaptcha(
     $this->config->item('recaptcha.sitekey'),
     $this->config->item('recaptcha.secret'),
     $this->config->item('recaptcha.options'),
@@ -185,7 +183,7 @@ $options = [
     'timeout' => 5,
     'debug' => false
 ];
-$captcha = new \AlbertCht\InvisibleReCaptcha\InvisibleReCaptcha($siteKey, $secretKey, $options);
+$captcha = new \Padosoft\InvisibleReCaptcha\InvisibleReCaptcha($siteKey, $secretKey, $options);
 
 // you can override single option config like this
 $captcha->setOption('debug', true);
@@ -263,9 +261,6 @@ This repo demonstrates how to use this package with ajax way.
 ## Credits 
 
 * anhskohbo (the author of no-captcha package)
-* [Contributors](https://github.com/albertcht/invisible-recaptcha/graphs/contributors)
+* albertcht (the author of the original package)
+* [Contributors](https://github.com/padosoft/invisible-recaptcha/graphs/contributors)
 
-## Support on Beerpay
-Hey dude! Help me out for a couple of :beers:!
-
-[![Beerpay](https://beerpay.io/albertcht/invisible-recaptcha/badge.svg?style=beer-square)](https://beerpay.io/albertcht/invisible-recaptcha)  [![Beerpay](https://beerpay.io/albertcht/invisible-recaptcha/make-wish.svg?style=flat-square)](https://beerpay.io/albertcht/invisible-recaptcha?focus=wish)
