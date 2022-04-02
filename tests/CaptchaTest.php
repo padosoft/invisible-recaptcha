@@ -12,9 +12,9 @@ use ReflectionClass;
 
 class CaptchaTest extends TestCase
 {
-    const SITE_KEY   = 'site_key';
+    const SITE_KEY = 'site_key';
     const SECRET_KEY = 'secret_key';
-    const OPTIONS    = [
+    const OPTIONS = [
         'hideBadge' => false,
         'dataBadge' => 'bottomright',
         'timeout' => 5,
@@ -40,56 +40,35 @@ class CaptchaTest extends TestCase
 
     public function testGetOptions()
     {
-        self::assertEquals(static::OPTIONS, $this->captcha->getOptions());
+        $this->assertEquals(static::OPTIONS, $this->captcha->getOptions());
     }
 
     public function testSetOption()
     {
         $this->captcha->setOption('debug', true);
         $this->captcha->setOption('timeout', 10);
-        self::assertEquals(10, $this->captcha->getOption('timeout'));
-        self::assertTrue($this->captcha->getOption('debug'));
+        $this->assertEquals(10, $this->captcha->getOption('timeout'));
+        $this->assertTrue($this->captcha->getOption('debug'));
     }
 
     public function testGetCaptchaJs()
     {
         $js = 'https://www.google.com/recaptcha/api.js';
 
-        self::assertEquals($js, $this->captcha->getCaptchaJs());
-        self::assertEquals($js . '?hl=us', $this->captcha->getCaptchaJs('us'));
+        $this->assertEquals($js, $this->captcha->getCaptchaJs());
+        $this->assertEquals($js . '?hl=us', $this->captcha->getCaptchaJs('us'));
+    }
+
+    public function testJavascriptHasNonce()
+    {
+        $this->assertStringContainsString('nonce="nonce-ASDFGHJKL"', $this->captcha->renderFooterJS('us', 'nonce-ASDFGHJKL'));
     }
 
     public function testGetPolyfillJs()
     {
         $js = 'https://cdn.polyfill.io/v2/polyfill.min.js';
 
-        self::assertEquals($js, $this->captcha->getPolyfillJs());
-    }
-
-    public function testSendVerifyRequest(){
-        $class = new ReflectionClass('Padosoft\InvisibleReCaptcha\InvisibleReCaptcha');
-        $method = $class->getMethod('sendVerifyRequest');
-        $method->setAccessible(true);
-        $ret=$method->invoke($this->captcha,[
-                                            'secret' => static::SECRET_KEY,
-                                            'remoteip' => '127.0.0.1',
-                                            'response' => '12321231321'
-                                        ]);
-        self::assertIsArray($ret);
-        self::assertTrue(array_key_exists('success',$ret));
-    }
-    public function testVerifyRequest()
-    {
-        $request = $this->getMockBuilder('Illuminate\Http\Request')
-                        ->disableOriginalConstructor()
-                        ->onlyMethods(['get', 'getClientIp'])->getMock();
-        $request->expects(self::any())
-                ->method('get')->willReturn('123131212');
-
-        $request->expects(self::any())
-                ->method('getClientIp')->willReturn('192.168.1.1');
-        self::assertFalse($this->captcha->verifyRequest($request));
-
+        $this->assertEquals($js, $this->captcha->getPolyfillJs());
     }
 
     public function testBladeDirective()
@@ -105,10 +84,44 @@ class CaptchaTest extends TestCase
         $serviceProvider = new InvisibleReCaptchaServiceProvider($app);
         $serviceProvider->addBladeDirective($blade);
 
-        $result = $blade->compileString('@captcha()');
-        self::assertEquals(
-            "<?php echo app('captcha')->render(); ?>",
-            $result
+        $this->assertEquals(
+            "<?php echo app('captcha')->renderCaptcha(); ?>",
+            $blade->compileString('@captcha()')
+        );
+
+        $this->assertEquals(
+            "<?php echo app('captcha')->renderCaptcha('us'); ?>",
+            $blade->compileString("@captcha('us')")
+        );
+
+        $this->assertEquals(
+            "<?php echo app('captcha')->renderCaptcha('us', 'nonce-ASDFGHJKL'); ?>",
+            $blade->compileString("@captcha('us', 'nonce-ASDFGHJKL')")
+        );
+
+        $this->assertEquals(
+            "<?php echo app('captcha')->renderPolyfill(); ?>",
+            $blade->compileString('@captchaPolyfill()')
+        );
+
+        $this->assertEquals(
+            "<?php echo app('captcha')->renderCaptchaHTML(); ?>",
+            $blade->compileString('@captchaHTML()')
+        );
+
+        $this->assertEquals(
+            "<?php echo app('captcha')->renderFooterJS(); ?>",
+            $blade->compileString('@captchaScripts()')
+        );
+
+        $this->assertEquals(
+            "<?php echo app('captcha')->renderFooterJS('us'); ?>",
+            $blade->compileString("@captchaScripts('us')")
+        );
+
+        $this->assertEquals(
+            "<?php echo app('captcha')->renderFooterJS('us', 'nonce-ASDFGHJKL'); ?>",
+            $blade->compileString("@captchaScripts('us', 'nonce-ASDFGHJKL')")
         );
     }
 }

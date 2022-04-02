@@ -2,6 +2,7 @@
 
 namespace Padosoft\InvisibleReCaptcha;
 
+use Illuminate\Support\Arr;
 use Illuminate\Http\Request;
 
 class InvisibleReCaptcha
@@ -78,13 +79,22 @@ class InvisibleReCaptcha
      *
      * @return string
      */
-    public function render($lang = null)
+    public function render($lang = null, $nonce = null)
     {
         $html = $this->renderPolyfill();
         $html .= $this->renderCaptchaHTML();
-        $html .= $this->renderFooterJS($lang);
-
+        $html .= $this->renderFooterJS($lang, $nonce);
         return $html;
+    }
+
+    /**
+     * Render HTML reCaptcha from directive.
+     *
+     * @return string
+     */
+    public function renderCaptcha(...$arguments)
+    {
+        return $this->render(...$arguments);
     }
 
     /**
@@ -106,7 +116,7 @@ class InvisibleReCaptcha
     {
         $html = '<div id="_g-recaptcha"></div>' . PHP_EOL;
         if ($this->getOption('hideBadge', false)) {
-            $html .= '<style>.grecaptcha-badge{display:none;!important}</style>' . PHP_EOL;
+            $html .= '<style>.grecaptcha-badge{display:none !important;}</style>' . PHP_EOL;
         }
 
         $html .= '<div class="g-recaptcha" data-sitekey="' . $this->siteKey . '" ';
@@ -117,18 +127,26 @@ class InvisibleReCaptcha
     }
 
     /**
-     * Render the footer JS neccessary for the recaptcha integration.
+     * Render the footer JS necessary for the recaptcha integration.
      *
      * @return string
      */
-    public function renderFooterJS($lang = null)
+    public function renderFooterJS(...$arguments)
     {
-        $html = '<script src="' . $this->getCaptchaJs($lang) . '" async defer></script>' . PHP_EOL;
-        $html .= '<script>var _submitForm,_captchaForm,_captchaSubmit,_execute=true;</script>';
+        $lang = Arr::get($arguments, 0);
+        $nonce = Arr::get($arguments, 1);
+
+        $html = '<script src="' . $this->getCaptchaJs($lang) . '" async defer';
+        if (isset($nonce) && ! empty($nonce)) {
+            $html .= ' nonce="' . $nonce . '"';
+        }
+        $html .= '></script>' . PHP_EOL;
+        $html .= '<script>var _submitForm,_captchaForm,_captchaSubmit,_execute=true,_captchaBadge;</script>';
         $html .= "<script>window.addEventListener('load', _loadCaptcha);" . PHP_EOL;
         $html .= "function _loadCaptcha(){";
         if ($this->getOption('hideBadge', false)) {
-            $html .= "document.querySelector('.grecaptcha-badge').style = 'display:none;!important'" . PHP_EOL;
+            $html .= "_captchaBadge=document.querySelector('.grecaptcha-badge');";
+            $html .= "if(_captchaBadge){_captchaBadge.style = 'display:none !important;';}" . PHP_EOL;
         }
         $html .= '_captchaForm=document.querySelector("#_g-recaptcha").closest("form");';
         $html .= "_captchaSubmit=_captchaForm.querySelector('[type=submit]');";
@@ -141,7 +159,6 @@ class InvisibleReCaptcha
             $html .= $this->renderDebug();
         }
         $html .= "}</script>" . PHP_EOL;
-
         return $html;
     }
 
@@ -195,7 +212,7 @@ class InvisibleReCaptcha
     }
 
     /**
-     * Verify invisible reCaptcha response by Illuminate Request.
+     * Verify invisible reCaptcha response by Symfony Request.
      *
      * @param Request $request
      *
@@ -277,7 +294,7 @@ class InvisibleReCaptcha
     /**
      * Getter function of options
      *
-     * @return array
+     * @return string
      */
     public function getOptions()
     {
